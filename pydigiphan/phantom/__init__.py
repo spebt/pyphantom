@@ -1,10 +1,16 @@
 import numpy as np
-import skimage
-import matplotlib as mpl
-import matplotlib.pyplot as plt
 import math
-import sys
-import os
+import skimage
+
+
+class phantom:
+    def __init__(self, name, img: np.ndarray, mask: np.ndarray) -> None:
+        self.name = name
+        self.image = img
+        self.mask = mask
+
+    def __str__(self) -> str:
+        return f"{self.name} {self.image.shape}"
 
 
 def put_disk_at_xy(img, xy, radius, value, ratio):
@@ -48,98 +54,34 @@ def transform_xylist(angrad, imgDims, xylist):
     return newlist
 
 
-def generate_hotrod_phantom():
-    imgN_x_ = 180
-    imgN_y_ = 180
-    img = np.zeros((imgN_x_, imgN_y_))
-    mask = np.zeros((imgN_x_, imgN_y_))
-    radii = np.array([2, 3, 4, 6, 7, 9])
+def generate_hotrod_phantom(shape=(100, 100)):
+    img = np.zeros(shape)
+    mask = np.zeros(shape)
+    radii = np.array([2, 3, 4, 6, 7, 9]) * shape[0] / 180
     pitches = 4 * radii
-    R_min = 20
-    R_max = 90
+    R_min = 20 * shape[0] / 180
+    R_max = 90 * shape[0] / 180
     Nlayers = (R_max - R_min) / pitches
-    # print(pitches)
-    # print(Nlayers)
     Nlayers = np.ceil(Nlayers)
-    # print(Nlayers)
-    shift_Rs = np.array([16, 20, 18, 30, 25, 36])
+    shift_Rs = np.array([16, 20, 18, 30, 25, 36]) * shape[0] / 180
     for idx in range(0, 6):
         angle_rad = idx * math.pi / 3
-        section_xylist = get_hot_rod_xy(
-            int(Nlayers[idx]), (imgN_x_ / 2, imgN_y_ / 2), pitches[idx]
-        )
+        section_xylist = get_hot_rod_xy(int(Nlayers[idx]), shape * 0.5, pitches[idx])
         section_xylist = np.asarray(section_xylist)
         shift_x = math.cos(math.pi / 6) * shift_Rs[idx]
         shift_y = math.sin(math.pi / 6) * shift_Rs[idx]
         section_xylist = shift_xylist(np.array([shift_x, shift_y]), section_xylist)
-        section_xylist = transform_xylist(angle_rad, (imgN_x_, imgN_y_), section_xylist)
+        section_xylist = transform_xylist(angle_rad, shape * 0.5, section_xylist)
         for dot_xy in section_xylist:
             put_disk_at_xy(img, dot_xy, radii[idx], 10, ratio=0.7)
             put_disk_at_xy(mask, dot_xy, radii[idx], idx + 1, ratio=1)
 
-    fig, ax = plt.subplots(figsize=(11, 10), dpi=100)
-    norm = mpl.colors.Normalize(vmin=0, vmax=10)
-    cmap = mpl.colors.LinearSegmentedColormap.from_list("", ["white", "orange"])
-    cbar = fig.colorbar(
-        ax.imshow(
-            img.T, origin="lower", cmap=mpl.colormaps["gray"], norm=norm, aspect="equal"
-        ),
-        pad=0.01,
-    )
 
-    for idx in range(0, 6):
-        ax.plot(
-            [90, math.cos(idx * math.pi / 3) * R_max + 90],
-            [90, math.sin(idx * math.pi / 3) * R_max + 90],
-            color="w",
-            ls=":",
-        )
-    fig.tight_layout()
-    # Output
-    outDir = "output/"
-    if os.path.exists(outDir) != True:
-        try:
-            os.mkdir(outDir)
-        except Exception as err:
-            print(err)
-            exit(2)
-    outImgName = "hotrod_phantom_plot_%dx%d.png" % (imgN_x_, imgN_y_)
-    outNpzName = "hotrod_phantom_data_%dx%d.npz" % (imgN_x_, imgN_y_)
-    print("Save phantom plot to", outDir + outImgName)
-    fig.savefig(outDir + outImgName, dpi=100)
-    print("Save phantom data to", outDir + outNpzName)
-    np.savez_compressed(outDir + outNpzName, phantom=img, mask=mask)
-
-
-def generate_dot_phantom():
-    imgN_x_ = 180
-    imgN_y_ = 180
-    img = np.zeros((imgN_x_, imgN_y_))
-    mask = np.zeros((imgN_x_, imgN_y_))
+def generate_dot_phantom(shape=(100, 100)):
+    img = np.zeros(shape)
+    mask = np.zeros(shape)
     img[89, 89] = 10
     mask[89, 89] = 1
-    fig, ax = plt.subplots(figsize=(11, 10), dpi=100)
-    norm = plt.Normalize(0, 10)
-    cmap = mpl.colors.LinearSegmentedColormap.from_list("", ["white", "orange"])
-    cbar = fig.colorbar(
-        ax.imshow(
-            img.T, origin="lower", cmap=mpl.colormaps["gray"], norm=norm, aspect="equal"
-        ),
-        pad=0.01,
-    )
-    outDir = "output/"
-    if not os.path.exists(outDir):
-        try:
-            os.mkdir(outDir)
-        except Exception as err:
-            print(err)
-            exit(2)
-    outImgName = "dot_phantom_plot_%dx%d.png" % (imgN_x_, imgN_y_)
-    outNpzName = "dot_phantom_data_%dx%d.npz" % (imgN_x_, imgN_y_)
-    print("Save phantom plot to", outDir + outImgName)
-    fig.savefig(outDir + outImgName, dpi=100)
-    print("Save phantom data to", outDir + outNpzName)
-    np.savez_compressed(outDir + outNpzName, phantom=img, mask=mask)
 
 
 def get_phantomType(args):
