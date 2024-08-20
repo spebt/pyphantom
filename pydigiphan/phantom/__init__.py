@@ -57,13 +57,13 @@ def transform_xylist(angrad, imgDims, xylist):
 def generate_hotrod_phantom(shape=(100, 100)):
     img = np.zeros(shape)
     mask = np.zeros(shape)
-    radii = np.array([2, 3, 4, 6, 7, 9]) * shape[0] / 180
+    radii = np.ceil(np.array([2, 3, 4, 6, 7, 9]) * shape[0] / 180)
     pitches = 4 * radii
-    R_min = 20 * shape[0] / 180
-    R_max = 90 * shape[0] / 180
+    R_min = int(20 * shape[0] / 180)
+    R_max = int(90 * shape[0] / 180)
     Nlayers = (R_max - R_min) / pitches
     Nlayers = np.ceil(Nlayers)
-    shift_Rs = np.array([16, 20, 18, 30, 25, 36]) * shape[0] / 180
+    shift_Rs = np.ceil(np.array([16, 20, 18, 30, 25, 36]) * shape[0] / 180)
     for idx in range(0, 6):
         angle_rad = idx * math.pi / 3
         section_xylist = get_hot_rod_xy(int(Nlayers[idx]), shape * 0.5, pitches[idx])
@@ -75,20 +75,36 @@ def generate_hotrod_phantom(shape=(100, 100)):
         for dot_xy in section_xylist:
             put_disk_at_xy(img, dot_xy, radii[idx], 10, ratio=0.7)
             put_disk_at_xy(mask, dot_xy, radii[idx], idx + 1, ratio=1)
+    return phantom("hotrod", img, mask)
 
 
-def generate_dot_phantom(shape=(100, 100)):
+def generate_dot_phantom(shape=(100, 100), xy=None):
     img = np.zeros(shape)
     mask = np.zeros(shape)
-    img[89, 89] = 10
-    mask[89, 89] = 1
+    if xy is None:
+        xy = (int(shape[0] * 0.5), int(shape[0] * 0.5))
+    img[xy[0], xy[1]] = 10
+    mask[xy[0], xy[1]] = 1
+    return phantom("dot", img, mask)
+
+
+def generate_disk_phantom(shape=(100, 100), xy=None, r=None):
+    img = np.zeros(shape)
+    mask = np.zeros(shape)
+    if xy is None:
+        xy = (int(shape[0] * 0.5), int(shape[0] * 0.5))
+    if r is None:
+        r = int(shape[0] * 0.25)
+    put_disk_at_xy(img, xy, r, 10, ratio=0.7)
+    put_disk_at_xy(mask, xy, r, 1, ratio=1)
+    return phantom("disk", img, mask)
 
 
 def get_phantomType(args):
     # print(len(args), args[0])
     if len(args) != 2:
         raise ValueError("Need 1 phantom type as argument")
-    alllist = ["hotrod", "Derenzo", "derenzo", "contrast", "dot"]
+    alllist = ["hotrod", "Derenzo", "derenzo", "contrast", "dot", "disk"]
     hotrod_list = ["hotrod", "Derenzo", "derenzo"]
     if args[1] in alllist:
         if args[1] in hotrod_list:
@@ -99,20 +115,24 @@ def get_phantomType(args):
         raise ValueError("Unknown phantom type")
 
 
-# Main stuff
-phanType = ""
-try:
-    phanType = get_phantomType(sys.argv)
-except Exception as err:
-    print("Error:", err)
-    exit(1)
-print("Produce", phanType, "phantom.")
-match phanType:
-    case "hotrod (Derenzo)":
-        # print('hotrod')
-        generate_hotrod_phantom()
-    case "contrast":
-        print("contrast, WIP...")
-    case "dot":
-        generate_dot_phantom()
-exit(0)
+def produce_phantom():
+    import sys
+
+    phanType = ""
+    try:
+        phanType = get_phantomType(sys.argv)
+    except Exception as err:
+        print("Error:", err)
+        exit(1)
+    print("Produce", phanType, "phantom.")
+    match phanType:
+        case "hotrod (Derenzo)":
+            # print('hotrod')
+            generate_hotrod_phantom()
+        case "contrast":
+            print("contrast, WIP...")
+        case "dot":
+            generate_dot_phantom()
+        case "disk":
+            generate_disk_phantom()
+    exit(0)
