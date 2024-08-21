@@ -1,11 +1,13 @@
 import numpy as np
 import math
-import skimage
+
+
+__all__ = ["phantom", "get_args_parsed"]
 
 
 class phantom:
-    def __init__(self, name, img: np.ndarray, mask: np.ndarray) -> None:
-        self.name = name
+    def __init__(self, typename, img: np.ndarray, mask: np.ndarray) -> None:
+        self.typename = typename
         self.image = img
         self.mask = mask
 
@@ -14,6 +16,8 @@ class phantom:
 
 
 def put_disk_at_xy(img, xy, radius, value, ratio):
+    import skimage.draw
+
     xx, yy = skimage.draw.circle_perimeter(int(xy[0]), int(xy[1]), radius)
     img[xx, yy] = value * ratio
     xx, yy = skimage.draw.disk((int(xy[0]), int(xy[1])), radius)
@@ -100,8 +104,30 @@ def generate_disk_phantom(shape=(100, 100), xy=None, r=None):
     return phantom("disk", img, mask)
 
 
+def get_args_parsed(args, pname="generate"):
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        prog=pname,
+        description="Python package for digital phantom generation",
+        epilog="For more information, visit https:\\\\spebt.github.io\\pyphantom",
+    )
+    available_phantoms = ["hotrod", "Derenzo", "derenzo", "contrast", "dot", "disk"]
+    parser.add_argument(
+        "-t",
+        "--type",
+        type=str,
+        help="Phantom type",
+        required=True,
+        choices=available_phantoms,
+    )
+    parser.add_argument(
+        "-o", "--outdir", type=str, help="Output directory", default="output"
+    )
+    return parser.parse_args(args)
+
+
 def get_phantomType(args):
-    # print(len(args), args[0])
     if len(args) != 2:
         raise ValueError("Need 1 phantom type as argument")
     alllist = ["hotrod", "Derenzo", "derenzo", "contrast", "dot", "disk"]
@@ -115,7 +141,7 @@ def get_phantomType(args):
         raise ValueError("Unknown phantom type")
 
 
-def produce_phantom():
+def generate_phantom_with_type():
     import sys
 
     phanType = ""
