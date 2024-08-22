@@ -1,26 +1,12 @@
+#!/usr/bin/env python3
+
+import pyphantom
+import sys
+
 if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser(
-        prog="generate.py",
-        description="Python package for digital phantom generation",
-        epilog="For more information, visit https:\\\\spebt.github.io\\pyphantom",
-        add_help=True,
+    cmdparser = pyphantom.cmdline.parser(sys.argv[0])
+    args = cmdparser.parse_args()
+    phantom_out = pyphantom.phantoms.generator.get_phantom(
+        args.ptype, args.shape, args.position, args.radius
     )
-    type_choises = ["hotrod", "Derenzo", "derenzo", "contrast", "dot", "disk"]
-    parser.add_argument(
-        "-t",
-        "--type",
-        type=str,
-        help="Phantom type\n available phantom types",
-        choices=type_choises,
-        required=True,
-    )
-    parser.add_argument(
-        "-o", "--outdir", type=str, help="Output directory", default="output"
-    )
-
-    args, unknown = parser.parse_known_args()
-    if len(unknown) > 0:
-        parser.print_help()
-        raise SyntaxError("Invalid Arguments")
+    pyphantom.fileio.save_phantom_all(phantom_out, args.outdir)

@@ -1,3 +1,5 @@
-from . import phantom
+__all__ = ["phantoms", "cmdline", "fileio"]
 
-__all__ = [phantom]
+from . import phantoms
+from . import cmdline as cmdline
+from . import fileio as fileio
