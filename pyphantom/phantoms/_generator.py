@@ -34,10 +34,8 @@ __all__ = ["get_phantom"]
 
 from ._helper import (
     put_disk_at_xy,
-    put_dot_at_xy,
-    get_hot_rod_xy,
-    shift_xylist,
-    transform_xylist,
+    put_dot_at_xys,
+    get_derenzo_section_xy,
 )
 
 from ._phantom import _phantom as phantom
@@ -47,32 +45,39 @@ import math
 
 
 def _derenzo_phantom(shape=(100, 100)):
-    shape = np.array(shape)
+    hw = shape[0] // 2
+    hh = shape[1] // 2
     img = np.zeros(shape)
     mask = np.zeros(shape)
-    radii = np.ceil(np.array([1, 2, 3, 4, 5, 6]) * shape[0] / 100)
-    pitches = 3 * radii
-    R_min = int(12 * shape[0] / 100)
-    R_max = int(35 * shape[0] / 100)
-    Nlayers = (R_max - R_min) / pitches
-    Nlayers = np.ceil(Nlayers)
-    print(Nlayers)
-    shift_Rs = np.ceil(np.array([10, 12, 14, 20, 20, 20]) * shape[0] / 100)
-    for idx in range(0, 6):
-        angle_rad = idx * math.pi / 3
-        section_xylist = get_hot_rod_xy(int(Nlayers[idx]), shape * 0.5, pitches[idx])
-        section_xylist = np.asarray(section_xylist)
-        shift_x = math.cos(math.pi / 6) * shift_Rs[idx]
-        shift_y = math.sin(math.pi / 6) * shift_Rs[idx]
-        section_xylist = shift_xylist(np.array([shift_x, shift_y]), section_xylist)
-        section_xylist = transform_xylist(angle_rad, shape * 0.5, section_xylist)
+    sr_base = shape[0] // 10
+    # pitches = np.array([2, 3, 4, 5, 6, 7])
+    radii = np.array([1, 2, 3, 4, 5, 5])
+    sr = radii + sr_base
+    pitches = np.max((radii * 1.5, np.full(6, 2)), axis=0).astype(int)
+    rmax = np.full(6, hw * 0.95)
+    nlayers = np.ceil((rmax - sr - radii * 2) / (pitches * 2)).astype(int)
+    print(f"nlayers: {nlayers}")
+    sw = sr * math.cos(0.5236)
+    sh = sr * math.sin(0.5236)
+    base_xys = [
+        (hw, hh + sr[0]),
+        (hw - sw[1], hh + sh[1]),
+        (hw - sw[2], hh - sh[2]),
+        (hw, hh - sr[3]),
+        (hw + sw[4], hh - sh[4]),
+        (hw + sw[5], hh + sh[5]),
+    ]
+    for sid in range(0, 6):
+        xyarray = get_derenzo_section_xy(
+            base_xy=base_xys[sid],
+            pitch_half=pitches[sid],
+            N_layer=nlayers[sid],
+            sId=sid,
+        )
+        for xy in xyarray:
+            put_disk_at_xy(img, xy, radii[sid], 10, ratio=0.7)
+            put_disk_at_xy(mask, xy, radii[sid], sid + 1, ratio=1)
 
-        for dot_xy in section_xylist:
-            put_dot_at_xy(img, dot_xy, 10)
-            put_dot_at_xy(mask, dot_xy, 10)
-
-            # put_disk_at_xy(img, dot_xy, radii[idx], 10, ratio=0.7)
-            # put_disk_at_xy(mask, dot_xy, radii[idx], idx + 1, ratio=1)
     return phantom("derenzo", img, mask)
 
 

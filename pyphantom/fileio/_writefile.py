@@ -64,7 +64,7 @@ def save_phantom_npz(phantom: phantom, fname: str) -> None:
         "mask": phantom.mask,
         "shape": phantom.shape,
     }
-    savez_compressed(fname, *mydict)
+    savez_compressed(fname, **mydict)
 
 
 def save_phantom_all(phantom, outdir) -> None:

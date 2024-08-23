@@ -19,10 +19,9 @@ For more detailed information on each function, refer to their individual docstr
 
 __all__ = [
     "put_disk_at_xy",
-    "put_dot_at_xy",  # Added "put_dot_at
+    "put_dot_at_xys",  # Added "put_dot_at
     "get_hot_rod_xy",
-    "shift_xylist",
-    "transform_xylist",
+    "get_derenzo_section_xy",
     "get_args_parsed",
 ]
 
@@ -39,8 +38,8 @@ def put_disk_at_xy(img, xy, radius, value, ratio):
     img[xx, yy] = value
 
 
-def put_dot_at_xy(img, xy, value):
-    img[xy[0], xy[1]] = value
+def put_dot_at_xys(img: numpy.ndarray, xys: numpy.ndarray, value: int):
+    img[xys[:, 0], xys[:, 1]] = value
 
 
 def get_hot_rod_xy(Nlayer, origin, pitch):
@@ -55,26 +54,41 @@ def get_hot_rod_xy(Nlayer, origin, pitch):
     return xy_list
 
 
-def shift_xylist(shifts, xylist):
-    newlist = []
-    for dot_xy in xylist:
-        new_x = dot_xy[0] + shifts[0]
-        new_y = dot_xy[1] + shifts[1]
-        newlist.append([int(new_x), int(new_y)])
-    return numpy.array(newlist)
-
-
-def transform_xylist(angrad, imgDims, xylist):
-    newlist = []
-    for dot_xy in xylist:
-        temp_x = dot_xy[0] - imgDims[0] * 0.5
-        temp_y = dot_xy[1] - imgDims[1] * 0.5
-        new_x = temp_x * math.cos(angrad) - temp_y * math.sin(angrad)
-        new_y = temp_x * math.sin(angrad) + temp_y * math.cos(angrad)
-        new_x = new_x + imgDims[0] * 0.5
-        new_y = new_y + imgDims[1] * 0.5
-        newlist.append((int(new_x), int(new_y)))
-    return newlist
+def get_derenzo_section_xy(
+    base_xy: tuple[int, int] = (0, 0),
+    pitch_half: int = 2,
+    N_layer: int = 3,
+    sId: int = 0,
+):
+    pitch_short = int(pitch_half * math.sqrt(3))
+    coeff_short = numpy.array([0])
+    coeff_long = numpy.array([0])
+    for id in range(1, N_layer):
+        coeff_short = numpy.concatenate((coeff_short, numpy.full(id + 1, id)))
+        coeff_long = numpy.concatenate((coeff_long, numpy.arange(-id, id + 1, 2)))
+    uu = coeff_short * pitch_short
+    vv = coeff_long * pitch_half
+    if sId == 0:
+        xx = vv + base_xy[0]
+        yy = uu + base_xy[1]
+    elif sId == 1:
+        xx = vv + base_xy[0] - pitch_half * (N_layer - 1)
+        yy = -uu + base_xy[1] + pitch_short * (N_layer - 1)
+    elif sId == 2:
+        xx = vv + base_xy[0] - pitch_half * (N_layer - 1)
+        yy = uu + base_xy[1] - pitch_short * (N_layer - 1)
+    elif sId == 3:
+        xx = vv + base_xy[0]
+        yy = base_xy[1] - uu
+    elif sId == 4:
+        xx = vv + base_xy[0] + pitch_half * (N_layer - 1)
+        yy = uu + base_xy[1] - pitch_short * (N_layer - 1)
+    elif sId == 5:
+        xx = vv + base_xy[0] + pitch_half * (N_layer - 1)
+        yy = -uu + base_xy[1] + pitch_short * (N_layer - 1)
+    else:
+        raise ValueError("Invalid section ID")
+    return numpy.array([xx, yy]).T
 
 
 def get_args_parsed(args, pname="generate"):
