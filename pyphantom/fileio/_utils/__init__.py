@@ -13,5 +13,5 @@ def check_outdir(outdir: str):
 
     if not os.path.exists(outdir):
         raise FileNotFoundError(
-            f"Output directory {outdir} does not exist. Create it first."
+            f'Output directory "{outdir}" does not exist. Create it first.'
         )

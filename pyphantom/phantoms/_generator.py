@@ -103,6 +103,25 @@ def _disk_phantom(shape=(100, 100), xy=None, r=None):
     return phantom("disk", img, mask)
 
 
+def _contrast_phantom(shape=(100, 100)):
+    img = np.zeros(shape)
+    mask = np.zeros(shape)
+    angles = np.arange(6) * np.pi / 3 + np.pi / 2
+    # xys = np.array(((np.cos(angles)+2)*0.25*shape[0], (np.sin(angles)+2)*0.25*shape[1]))
+    rs = np.array([2, 3, 4, 5, 6, 8])*shape[0]/100
+    id = 1
+    for r, ang in zip(rs, angles):
+        xy = (
+            int((np.cos(ang) + 2) * (shape[0] * 0.25)),
+            int((np.sin(ang) + 2) * (shape[1] * 0.25)),
+        )
+    
+        put_disk_at_xy(img, xy, r, 10, ratio=0.7)
+        put_disk_at_xy(mask, xy, r, id, ratio=1)
+        id = id + 1
+    return phantom("contrast", img, mask)
+
+
 def get_phantom(
     ptype: str,
     shape: tuple[int, int] = (100, 100),
@@ -115,9 +134,11 @@ def get_phantom(
 
     if ptype == "derenzo":
         return _derenzo_phantom(shape)
-    elif ptype == "contrast":
-        print("contrast, WIP...")
+    # elif ptype == "contrast":
+    #     print("contrast, WIP...")
     elif ptype == "dot":
         return _dot_phantom(shape, xy)
     elif ptype == "disk":
         return _disk_phantom(shape, xy, r)
+    elif ptype == "contrast":
+        return _contrast_phantom(shape)
