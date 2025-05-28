@@ -1,3 +1,2 @@
-numpy
-scikit-image
+torch
 matplotlib
