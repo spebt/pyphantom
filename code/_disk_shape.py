@@ -129,15 +129,8 @@ def hot_rods_add_sector(
         phantom[
             int(center_px[0] - radius_px) : int(center_px[0] + radius_px),
             int(center_px[1] - radius_px) : int(center_px[1] + radius_px),
-        ] = disk
-
-    for center in sector_centers_px:
-        phantom[
-            int(center[0] - radius_px) : int(center[0] + radius_px),
-            int(center[1] - radius_px) : int(center[1] + radius_px),
-        ] = disk
+        ] += disk
     return sector_centers_mm, sector_centers_px
-
 
 def fov_tensor_dict(
     n_pixels: Sequence[int] = (512, 512),
