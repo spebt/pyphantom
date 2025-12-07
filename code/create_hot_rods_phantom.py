@@ -1,3 +1,4 @@
+
 if __name__ == "__main__":
 
     from torch import arange, cat
@@ -7,8 +8,8 @@ if __name__ == "__main__":
 
     from _disk_shape import fov_tensor_dict, hot_rods_add_sector
 
-    fov_size_in_mm = (64.0, 64.0)  # mm
-    fov_px_size_in_mm = (0.125, 0.125)  # mm
+    fov_size_in_mm = (70.0, 70.0)  # mm
+    fov_px_size_in_mm = (0.25, 0.25)  # mm
     fov_n_pxs = (
         (tensor(fov_size_in_mm) / tensor(fov_px_size_in_mm)).int().tolist()
     )
@@ -20,8 +21,8 @@ if __name__ == "__main__":
 
     radii = tensor([0.5, 0.625, 0.75, 1.0, 1.25, 1.5])  # mm
     shifts = tensor(
-        [[4, 0.0], [4.5, 0.0], [4, 0.0], [5, 0.0], [5, 0.0], [6, 0.0]]
-    )  # x, y shift in mm
+        [[3.5, 0.0], [4.0, 0.0], [4.5, 0.0], [5.0, 0.0], [5.5, 0.0], [6.0, 0.0]]
+    )
     n_x_layers = tensor(
         [14, 11, 9, 7, 6, 5]
     )  # Number of layers in the x-direction
@@ -41,7 +42,7 @@ if __name__ == "__main__":
         sectors_centers_mm.append(sector_centers_mm)
 
     out_dict = {
-        "Description": "Hot Rods Phantom",
+        "Description": "Hot Rods Phantom densely",
         "Metadata": {
             "size in mm": fov_dict["size in mm"].tolist(),
             "mm per pixel": fov_dict["mm per pixel"].tolist(),
@@ -57,5 +58,5 @@ if __name__ == "__main__":
     }
     torch_save(
         out_dict,
-        f"hot_rods_phantom_{fov_dict["size in mm"][0].item()}_mm_x_{fov_dict["size in mm"][1].item()}_mm.pt",
+        f"hot_rods_phantom_{fov_dict['size in mm'][0].item()}_mm_x_{fov_dict['size in mm'][1].item()}_mm.pt",
     )
